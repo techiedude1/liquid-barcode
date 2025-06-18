@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Centered Custom Label Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Inline SVG favicon of a barcode -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' fill='%23fff'/%3E%3Crect x='4' y='5' width='2' height='22' fill='%23000'/%3E%3Crect x='8' y='5' width='1' height='22' fill='%23000'/%3E%3Crect x='11' y='5' width='3' height='22' fill='%23000'/%3E%3Crect x='16' y='5' width='1' height='22' fill='%23000'/%3E%3Crect x='19' y='5' width='4' height='22' fill='%23000'/%3E%3Crect x='25' y='5' width='1' height='22' fill='%23000'/%3E%3C/svg%3E">
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <style>
+    html, body {
+      height: 100%; margin: 0; padding: 0; background: #fff;
+    }
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh;}
+    .label-card {
+      background: #fff; box-shadow: 0 2px 20px rgba(0,0,0,0.04);
+      border-radius: 16px; padding: 18px 16px 12px 16px;
+      border: 1.5px solid #e5e7eb; max-width: 410px; width: 100%;
+      margin: 0; display: flex; flex-direction: column; align-items: stretch;
+    }
+    .label-title {
+      font-size: 1.14rem; font-weight: 700; color: #2563eb; text-align: center; margin-bottom: 11px; letter-spacing: 0.01em;
+    }
+    .label-row { display: flex; justify-content: center; gap: 7px; margin-bottom: 7px; }
+    .t4-fill { border: none; border-bottom: 2px solid #aaa; background: none; font-size: 1rem; font-weight: bold;
+      min-width: 32px; text-align: center; outline: none; margin: 0 2px; transition: width 0.2s; height: 2.1em; padding: 2px 5px;
+    }
+    .t4-fill:focus { border-color: #2563eb;}
+    .barcode-svg-wrap { display: flex; justify-content: center; align-items: flex-end; margin: 0;}
+    #t4-barcodePreview { background: #fff; display: block; margin: 0 auto; }
+    .barcode-num {
+      display: block; font-size: 1.18rem; font-weight: bold; color: #f59e42; text-align: center; margin: 0;
+      letter-spacing: 2px; padding-top: 2px; /* No underline! */
+    }
+    .exp-box {
+      display: inline-block; border: 2px solid #2563eb; border-radius: 6px;
+      padding: 3px 17px 3px 10px; font-weight: bold; margin: 8px 0 0 0;
+      font-size: 1rem; letter-spacing: 1px; color: #2563eb; background: #f5faff;
+      vertical-align: middle;
+    }
+    .label-copy-btn {
+      background: #2563eb; color: #fff; padding: 9px 22px; border: none; border-radius: 10px; font-weight: 600; font-size: 1.05rem; cursor: pointer; margin-top: 10px; align-self: center;
+    }
+    .label-copy-btn:disabled { background: #cbd5e1; cursor: not-allowed;}
+    @media (max-width:480px) {
+      .label-card { padding: 6px 2vw 9px 2vw;}
+    }
+  </style>
+</head>
+<body>
+  <div class="label-card">
+    <div class="label-title">Centered Custom Label Generator (Edge-to-Edge)</div>
+    <div class="label-row">
+      <input id="t4-line1" class="t4-fill" type="text" style="width:320px;" maxlength="44" placeholder="(main label line)">
+    </div>
+    <div class="label-row">
+      <input id="t4-mgVal" class="t4-fill" type="text" maxlength="10" style="width:50px;">
+      <span style="font-weight:600; margin-left:2px;">mg PER</span>
+      <input id="t4-mlVal" class="t4-fill" type="text" maxlength="10" style="width:50px;">
+      <span style="font-weight:600; margin-left:2px;">mL</span>
+    </div>
+    <div class="label-row">
+      <span style="font-weight:600;">LOT#</span>
+      <input id="t4-lotVal" class="t4-fill" type="text" maxlength="20" style="width:65px;">
+      <span style="font-weight:600; margin-left:12px;">MAN:</span>
+      <input id="t4-manVal" class="t4-fill" type="text" maxlength="20" style="width:70px;">
+    </div>
+    <div class="label-row">
+      <span class="exp-box" id="t4-expBox">
+        EXP: <input id="t4-expMonth" class="t4-fill" type="text" maxlength="2" style="width:21px; border-bottom:none; border-radius:3px;">/<input id="t4-expDay" class="t4-fill" type="text" maxlength="2" style="width:21px; border-bottom:none; border-radius:3px;">/<input id="t4-expYear" class="t4-fill" type="text" maxlength="4" style="width:37px; border-bottom:none; border-radius:3px;">
+      </span>
+    </div>
+    <div class="label-row">
+      <span style="font-weight:600;">Barcode:</span>
+      <input id="t4-barcodeVal" class="t4-fill" type="text" maxlength="24" style="width:170px;" placeholder="Barcode value">
+    </div>
+    <div class="barcode-svg-wrap">
+      <svg id="t4-barcodePreview" width="340" height="60"></svg>
+    </div>
+    <span class="barcode-num" id="t4-barcodeNum"></span>
+    <button class="label-copy-btn" id="t4-copyBtn">Copy Label as Image</button>
+    <div style="text-align:center;color:#64748b;font-size:0.93rem;margin-top:6px;">Paste the copied label image anywhere that supports images (Word, Docs, email, etc).</div>
+    <div id="t4-status" style="text-align:center;margin-top:4px;color:#22c55e;font-weight:bold;"></div>
+  </div>
+  <script>
+    // Elements
+    const t4_line1 = document.getElementById('t4-line1');
+    const t4_mgVal = document.getElementById('t4-mgVal');
+    const t4_mlVal = document.getElementById('t4-mlVal');
+    const t4_lotVal = document.getElementById('t4-lotVal');
+    const t4_manVal = document.getElementById('t4-manVal');
+    const t4_expMonth = document.getElementById('t4-expMonth');
+    const t4_expDay = document.getElementById('t4-expDay');
+    const t4_expYear = document.getElementById('t4-expYear');
+    const t4_barcodeVal = document.getElementById('t4-barcodeVal');
+    const t4_svg = document.getElementById('t4-barcodePreview');
+    const t4_barcodeNum = document.getElementById('t4-barcodeNum');
+    const t4_copyBtn = document.getElementById('t4-copyBtn');
+    const t4_status = document.getElementById('t4-status');
+
+    function updateT4() {
+      let val = t4_barcodeVal.value.trim();
+      t4_svg.innerHTML = '';
+      t4_barcodeNum.textContent = val;
+      if (!val) return;
+      try {
+        JsBarcode(t4_svg, val, {format: "CODE128", height: 48, width: 1.7, displayValue: false, margin: 0});
+      } catch {}
+    }
+    t4_barcodeVal.addEventListener('input', updateT4);
+
+    // Update barcode number live too
+    t4_barcodeVal.addEventListener('input', () => {
+      t4_barcodeNum.textContent = t4_barcodeVal.value.trim();
+    });
+
+    // Initial barcode (if autofill)
+    updateT4();
+
+    t4_copyBtn.onclick = async function() {
+      // Prepare all label fields
+      let line1 = t4_line1.value.trim();
+      let mg = t4_mgVal.value.trim();
+      let ml = t4_mlVal.value.trim();
+      let lot = t4_lotVal.value.trim();
+      let man = t4_manVal.value.trim();
+      let expM = t4_expMonth.value.trim();
+      let expD = t4_expDay.value.trim();
+      let expY = t4_expYear.value.trim();
+      let barcode = t4_barcodeVal.value.trim();
+      let svgElem = t4_svg;
+      let svgData = new XMLSerializer().serializeToString(svgElem);
+      let img = new window.Image();
+      img.onload = function() {
+        // Set edge-to-edge tight size
+        let width = 360, height = 200;
+        let canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        let ctx = canvas.getContext('2d');
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, width, height);
+
+        // 1. Main Line
+        ctx.font = "bold 22px Inter, Arial";
+        ctx.fillStyle = "#222";
+        ctx.textAlign = "center";
+        ctx.fillText(line1, width/2, 30);
+
+        // 2. mg PER mL
+        ctx.font = "bold 18px Inter, Arial";
+        ctx.fillText(`${mg} mg PER ${ml} mL`, width/2, 62);
+
+        // 3. LOT / MAN row
+        ctx.font = "bold 15px Inter, Arial";
+        ctx.textAlign = "left";
+        ctx.fillText("LOT#: " + lot, 8, 89);
+        ctx.textAlign = "right";
+        ctx.fillText("MAN: " + man, width-8, 89);
+
+        // 4. EXP box row
+        let expLabel = `EXP: ${expM}/${expD}/${expY}`;
+        let boxWidth = ctx.measureText(expLabel).width + 24;
+        let boxX = (width-boxWidth)/2, boxY = 104, boxH = 29;
+        ctx.fillStyle = "#f5faff";
+        ctx.strokeStyle = "#2563eb";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, boxWidth, boxH, 7);
+        ctx.fill();
+        ctx.stroke();
+        ctx.font = "bold 16px Inter, Arial";
+        ctx.fillStyle = "#2563eb";
+        ctx.textAlign = "center";
+        ctx.fillText(expLabel, width/2, boxY+20);
+
+        // 5. Barcode, tight to bottom edge
+        ctx.drawImage(img, 10, 138, width-20, 38);
+
+        // 6. Barcode number (centered, bold, no underline)
+        ctx.font = "bold 18px Inter, Arial";
+        ctx.fillStyle = "#f59e42";
+        ctx.textAlign = "center";
+        ctx.fillText(barcode, width/2, 191);
+
+        // Copy logic
+        let dataUrl = canvas.toDataURL("image/png");
+        if (navigator.clipboard && window.ClipboardItem) {
+          fetch(dataUrl).then(res=>res.blob()).then(blob => {
+            navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]).then(()=>{
+              t4_status.textContent = "Label copied! Paste anywhere images are supported.";
+            },()=>{
+              t4_status.innerHTML = `<a href="${dataUrl}" download="label.png">Download label</a>`;
+            });
+          });
+        } else {
+          t4_status.innerHTML = `<a href="${dataUrl}" download="label.png">Download label</a>`;
+        }
+      };
+      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+    };
+  </script>
+</body>
+</html>
